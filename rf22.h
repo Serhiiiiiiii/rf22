@@ -1,17 +1,3 @@
-/*
- Copyright (C) 2011 J. Coliz <maniacbug@ymail.com>
-
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- version 2 as published by the Free Software Foundation.
- */
-
-/**
- * @file RF24.h
- *
- * Class declaration for RF24 and helper enums
- */
-
 #ifndef __RF24_H__
 #define __RF24_H__
 
@@ -98,28 +84,8 @@ public:
    */
   /**@{*/
 
-  /**
-   * Arduino Constructor
-   *
-   * Creates a new instance of this driver.  Before using, you create an instance
-   * and send in the unique pins that this chip is connected to.
-   *
-   * @param _cepin The pin attached to Chip Enable on the RF module
-   * @param _cspin The pin attached to Chip Select
-   */
   RF24(uint16_t _cepin, uint16_t _cspin);
   //#if defined (RF24_LINUX)
-  
-    /**
-  * Optional Linux Constructor
-  *
-  * Creates a new instance of this driver.  Before using, you create an instance
-  * and send in the unique pins that this chip is connected to.
-  *
-  * @param _cepin The pin attached to Chip Enable on the RF module
-  * @param _cspin The pin attached to Chip Select
-  * @param spispeed For RPi, the SPI speed in MHZ ie: BCM2835_SPI_SPEED_8MHZ
-  */
   
   RF24(uint16_t _cepin, uint16_t _cspin, uint32_t spispeed );
   //#endif
@@ -144,40 +110,11 @@ public:
   /**
    * Start listening on the pipes opened for reading.
    *
-   * 1. Be sure to call openReadingPipe() first.  
-   * 2. Do not call write() while in this mode, without first calling stopListening().
-   * 3. Call available() to check for incoming traffic, and read() to get it. 
-   *  
-   * @code
-   * Open reading pipe 1 using address CCCECCCECC
-   *  
-   * byte address[] = { 0xCC,0xCE,0xCC,0xCE,0xCC };
-   * radio.openReadingPipe(1,address);
-   * radio.startListening();
-   * @endcode
-   */
+
   void startListening(void);
 
-  /**
-   * Stop listening for incoming messages, and switch to transmit mode.
-   *
-   * Do this before calling write().
-   * @code
-   * radio.stopListening();
-   * radio.write(&data,sizeof(data));
-   * @endcode
-   */
   void stopListening(void);
 
-  /**
-   * Check whether there are bytes available to be read
-   * @code
-   * if(radio.available()){
-   *   radio.read(&data,sizeof(data));
-   * }
-   * @endcode
-   * @return True if there is a payload available, false if none is
-   */
   bool available(void);
 
   /**
@@ -229,31 +166,6 @@ public:
    */
   bool write( const void* buf, uint8_t len );
 
-  /**
-   * New: Open a pipe for writing via byte array. Old addressing format retained
-   * for compatibility.
-   *
-   * Only one writing pipe can be open at once, but you can change the address
-   * you'll write to. Call stopListening() first.
-   *
-   * Addresses are assigned via a byte array, default is 5 byte address length
-s   *
-   * @code
-   *   uint8_t addresses[][6] = {"1Node","2Node"};
-   *   radio.openWritingPipe(addresses[0]);
-   * @endcode
-   * @code
-   *  uint8_t address[] = { 0xCC,0xCE,0xCC,0xCE,0xCC };
-   *  radio.openWritingPipe(address);
-   *  address[0] = 0x33;
-   *  radio.openReadingPipe(1,address);
-   * @endcode
-   * @see setAddressWidth
-   *
-   * @param address The address of the pipe to open. Coordinate these pipe
-   * addresses amongst nodes on the network.
-   */
-
   void openWritingPipe(const uint8_t *address);
 
   /**
@@ -286,28 +198,6 @@ s   *
 
   void openReadingPipe(uint8_t number, const uint8_t *address);
 
-   /**@}*/
-  /**
-   * @name Advanced Operation
-   *
-   *  Methods you can use to drive the chip in more advanced ways
-   */
-  /**@{*/
-
-  /**
-   * Print a giant block of debugging information to stdout
-   *
-   * @warning Does nothing if stdout is not defined.  See fdevopen in stdio.h
-   * The printf.h file is included with the library for Arduino.
-   * @code
-   * #include <printf.h>
-   * setup(){
-   *  Serial.begin(115200);
-   *  printf_begin();
-   *  ...
-   * }
-   * @endcode
-   */
   void printDetails(void);
 
   /**
@@ -328,10 +218,6 @@ s   *
    */
   bool available(uint8_t* pipe_num);
 
-  /**
-   * Check if the radio needs to be read. Can be used to prevent data loss
-   * @return True if all three 32-byte radio buffers are full
-   */
   bool rxFifoFull();
 
   /**
@@ -361,20 +247,6 @@ s   *
    */
   void powerUp(void) ;
 
-  /**
-  * Write for single NOACK writes. Optionally disables acknowledgements/autoretries for a single write.
-  *
-  * @note enableDynamicAck() must be called to enable this feature
-  *
-  * Can be used with enableAckPayload() to request a response
-  * @see enableDynamicAck()
-  * @see setAutoAck()
-  * @see write()
-  *
-  * @param buf Pointer to the data to be sent
-  * @param len Number of bytes to be sent
-  * @param multicast Request ACK (0), NOACK (1)
-  */
   bool write( const void* buf, uint8_t len, const bool multicast );
 
   /**
@@ -536,30 +408,6 @@ s   *
    */
   void whatHappened(bool& tx_ok,bool& tx_fail,bool& rx_ready);
 
-  /**
-   * Non-blocking write to the open writing pipe used for buffered writes
-   *
-   * @note Optimization: This function now leaves the CE pin high, so the radio
-   * will remain in TX or STANDBY-II Mode until a txStandBy() command is issued. Can be used as an alternative to startWrite()
-   * if writing multiple payloads at once.
-   * @warning It is important to never keep the nRF24L01 in TX mode with FIFO full for more than 4ms at a time. If the auto
-   * retransmit/autoAck is enabled, the nRF24L01 is never in TX mode long enough to disobey this rule. Allow the FIFO
-   * to clear by issuing txStandBy() or ensure appropriate time between transmissions.
-   *
-   * @see write()
-   * @see writeFast()
-   * @see startWrite()
-   * @see writeBlocking()
-   *
-   * For single noAck writes see:
-   * @see enableDynamicAck()
-   * @see setAutoAck()
-   *
-   * @param buf Pointer to the data to be sent
-   * @param len Number of bytes to be sent
-   * @param multicast Request ACK (0) or NOACK (1)
-   * @return True if the payload was delivered successfully false if not
-   */
   void startFastWrite( const void* buf, uint8_t len, const bool multicast, bool startTx = 1 );
 
   /**
